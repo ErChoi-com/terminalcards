@@ -1,0 +1,28 @@
+<!-- mainly useless -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <a href="/index.html"> Home </a>
+        <p>Provide a username. It has to be unique.</p>
+        <input type = "text" id = "username" name = "username" placeholder = "username">
+        <p>Provide a room code. It has to be unique also.</p>
+        <input type = "text" id = "roomCode" name = "roomCode" placeholder = "roomCode">
+
+    <button type = "button" id = "make"> Make Room </button>
+    <button type = "button" id = "join"> Join Room </button>
+    <button type = "button" id = "disconnect"> Disconnect </button>
+    <div id = "body"> </div>
+    <div id = "terminal" contenteditable = "true"> >&nbsp;</div>
+
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <script src = "interaction.js"> </script>
+    <script src = "gamelogic.js"> </script>
+</body>
+</html>

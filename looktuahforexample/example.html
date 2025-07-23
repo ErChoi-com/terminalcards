@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PeerJS One-to-One Chat</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="name-form">
+    <h2>Enter your name</h2>
+    <form id="set-name-form">
+      <input type="text" id="my-name" required />
+      <button type="submit">Start</button>
+    </form>
+  </div>
+
+  <div id="call-form" style="display: none;">
+    <h2>Welcome, <span id="your-id"></span></h2>
+    <form id="make-call-form">
+      <input type="text" id="peer-id-to-call" placeholder="Peer name to call" required />
+      <button type="submit">Call</button>
+    </form>
+  </div>
+
+  <div id="chat-area" style="display: none;">
+    <h3>Connected to <span id="connected-peer-id"></span></h3>
+    <div id="messages"></div>
+    <form id="message-form">
+      <input type="text" id="message-input" placeholder="Type your message" required />
+      <button type="submit">Send</button>
+    </form>
+    <button id="disconnect">Disconnect</button>
+  </div>
+
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+  <script type="module" src="main.js"></script>
+</body>
+</html>
