@@ -22,8 +22,13 @@ const terminal = document.getElementById("terminal");
 // HOST: Create room
 make.addEventListener("click", () => {
     if (!inRoom) {
-        peer = new Peer(roomCode.value);
-
+        // Use public PeerJS server for GitHub Pages
+        peer = new Peer(roomCode.value, {
+            host: "peerjs.com",
+            port: 443,
+            path: "/",
+            secure: true
+        });
 
         peer.on("open", () => {
             attachMessage("Room created. Waiting for peers...");
@@ -32,6 +37,10 @@ make.addEventListener("click", () => {
             savedUser = username.value;
             savedRoom = roomCode.value;
             configureInput(); // host can send too
+        });
+
+        peer.on("error", (err) => {
+            attachMessage("PeerJS error: " + err.type);
         });
 
         peer.on("connection", (incomingConn) => {
@@ -80,8 +89,13 @@ make.addEventListener("click", () => {
 // USER: Join room
 join.addEventListener("click", () => {
     if (!inRoom) {
-        peer = new Peer();
-
+        // Use public PeerJS server for GitHub Pages
+        peer = new Peer({
+            host: "peerjs.com",
+            port: 443,
+            path: "/",
+            secure: true
+        });
 
         peer.on("open", () => {
             conn = peer.connect(roomCode.value); // connect to host
@@ -103,6 +117,14 @@ join.addEventListener("click", () => {
             conn.on("data", (data) => {
                 attachMessage(data);
             });
+
+            conn.on("error", (err) => {
+                attachMessage("Connection error: " + err.type);
+            });
+        });
+
+        peer.on("error", (err) => {
+            attachMessage("PeerJS error: " + err.type);
         });
     } else {
         attachMessage("You're already in a room.");
