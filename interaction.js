@@ -36,9 +36,11 @@ make.addEventListener("click", () => {
         peer.on("connection", (incomingConn) => {
             const peerId = incomingConn.peer;
             connections[peerId] = incomingConn;
-
+            // where block of code originally was
             incomingConn.on("data", (data) => {
-                for (let id in usernames) {
+                // dropped block of code
+                if (data.type === "intro") {
+                    for (let id in usernames) {
                     if (data.username === usernames[id]) {
                         incomingConn.send({
                             type: "error",
@@ -53,7 +55,7 @@ make.addEventListener("click", () => {
                         return;
                     }
                 }
-                if (data.type === "intro") {
+                // moved block of code
                     // Save username from the peer
                     usernames[peerId] = data.username;
                     attachMessage(`${data.username} joined the room.`);
