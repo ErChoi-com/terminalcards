@@ -38,23 +38,22 @@ make.addEventListener("click", () => {
             connections[peerId] = incomingConn;
 
             incomingConn.on("data", (data) => {
-                if (data.type === "intro") {
-                    // Check for duplicate username when user tries to join
-                    for (let id in usernames) {
-                        if (data.username === usernames[id]) {
-                            incomingConn.send({
-                                type: "error",
-                                text: "User has identical username, connection terminated"
-                            });
-                            setTimeout(() => {
-                                delete connections[peerId];
-                                delete usernames[peerId];
-                                incomingConn.close();
-                            }, 100);
-                            attachMessage("User has identical username. Terminated");
-                            return;
-                        }
+                for (let id in usernames) {
+                    if (data.username === usernames[id]) {
+                        incomingConn.send({
+                            type: "error",
+                            text: "User has identical username, connection terminated"
+                        });
+                        setTimeout(() => {
+                            delete connections[peerId];
+                            delete usernames[peerId];
+                            incomingConn.close();
+                        }, 100);
+                        attachMessage("User has identical username. Terminated")
+                        return;
                     }
+                }
+                if (data.type === "intro") {
                     // Save username from the peer
                     usernames[peerId] = data.username;
                     attachMessage(`${data.username} joined the room.`);
