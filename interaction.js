@@ -22,7 +22,14 @@ const terminal = document.getElementById("terminal");
 // HOST: Create room
 make.addEventListener("click", () => {
     if (!inRoom) {
-        peer = new Peer(roomCode.value);
+       // HOST or USER
+        peer = new Peer(roomCode.value || undefined, {
+        host: "0.peerjs.com",
+        port: 443,
+        path: "/",
+        secure: true
+        });
+
 
         peer.on("open", () => {
             attachMessage("Room created. Waiting for peers...");
@@ -79,7 +86,14 @@ make.addEventListener("click", () => {
 // USER: Join room
 join.addEventListener("click", () => {
     if (!inRoom) {
-        peer = new Peer();
+        // HOST or USER
+        peer = new Peer(roomCode.value || undefined, {
+        host: "0.peerjs.com",
+        port: 443,
+        path: "/",
+        secure: true
+        });
+
 
         peer.on("open", () => {
             conn = peer.connect(roomCode.value); // connect to host
