@@ -22,12 +22,10 @@ const terminal = document.getElementById("terminal");
 // HOST: Create room
 make.addEventListener("click", () => {
     if (!inRoom) {
-       // HOST or USER
-        peer = new Peer(roomCode.value || undefined, {
-        host: "0.peerjs.com",
-        port: 443,
-        path: "/",
-        secure: true
+        peer = new Peer(roomCode.value, {
+            host: 'peerjs.com',
+            secure: true,
+            port: 443
         });
 
 
@@ -86,12 +84,10 @@ make.addEventListener("click", () => {
 // USER: Join room
 join.addEventListener("click", () => {
     if (!inRoom) {
-        // HOST or USER
-        peer = new Peer(roomCode.value || undefined, {
-        host: "0.peerjs.com",
-        port: 443,
-        path: "/",
-        secure: true
+        peer = new Peer({
+            host: 'peerjs.com',
+            secure: true,
+            port: 443
         });
 
 
