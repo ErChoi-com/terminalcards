@@ -18,6 +18,7 @@ const disconnect = document.getElementById("disconnect");
 const body = document.getElementById("body");
 const terminal = document.getElementById("terminal");
 
+//just a rewrite so git commit takes this
 // HOST: Create room
 make.addEventListener("click", () => {
     if (!inRoom) {
