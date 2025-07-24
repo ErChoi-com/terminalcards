@@ -38,10 +38,6 @@ make.addEventListener("click", () => {
             connections[peerId] = incomingConn;
 
             incomingConn.on("data", (data) => {
-                // Don't allow any messages before intro
-                if (data.type !== "intro" && !usernames[peerId]) {
-                    return;
-                }
                 if (data.type === "intro") {
                     // Check for duplicate username when user tries to join
                     for (let id in usernames) {
