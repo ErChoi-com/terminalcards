@@ -22,12 +22,14 @@ const terminal = document.getElementById("terminal");
 // HOST: Create room
 make.addEventListener("click", () => {
     if (!inRoom) {
-        // Use public PeerJS server for GitHub Pages
+        // Use public PeerJS cloud server configuration that works with GitHub Pages
         peer = new Peer(roomCode.value, {
-            host: "peerjs.com",
-            port: 443,
-            path: "/",
-            secure: true
+            config: {
+                'iceServers': [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:global.stun.twilio.com:3478' }
+                ]
+            }
         });
 
         peer.on("open", () => {
@@ -80,11 +82,7 @@ make.addEventListener("click", () => {
             incomingConn.on("close", () => {
                 const user = usernames[peerId] || peerId;
                 attachMessage(`${user} disconnected.`);
-                broadcast(peerId, { 
-                    type: "info",
-                    text: `${user} has left.`,
-                    username: user
-                });
+                broadcast(peerId, `${user} has left.`);
                 delete connections[peerId];
                 delete usernames[peerId];
             });
@@ -97,12 +95,14 @@ make.addEventListener("click", () => {
 // USER: Join room
 join.addEventListener("click", () => {
     if (!inRoom) {
-        // Use public PeerJS server for GitHub Pages
+        // Use public PeerJS cloud server configuration that works with GitHub Pages
         peer = new Peer({
-            host: "peerjs.com",
-            port: 443,
-            path: "/",
-            secure: true
+            config: {
+                'iceServers': [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:global.stun.twilio.com:3478' }
+                ]
+            }
         });
 
         peer.on("open", () => {
