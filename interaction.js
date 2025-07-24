@@ -50,7 +50,7 @@ make.addEventListener("click", () => {
             incomingConn.on("data", (data) => {
                 for (let id in usernames) {
                     if (data.username === usernames[id]) {
-                        incomingConn.send('User has identical username, connection terminated');
+                        incomingConn.send({ type: "error", text: "User has identical username, connection terminated" });
                         setTimeout(() => {
                             delete connections[peerId];
                             delete usernames[peerId];
@@ -65,11 +65,15 @@ make.addEventListener("click", () => {
                     usernames[peerId] = data.username;
                     attachMessage(`${data.username} joined the room.`);
                     // Optionally notify others
-                    broadcast(peerId, `${data.username} has joined.`);
+                    broadcast(peerId, { type: "info", text: `${data.username} has joined.`, username: data.username });
                 } else if (data.type === "message") {
                     const user = usernames[peerId] || "Unknown";
                     attachMessage(`[${user}]: ${data.text}`);
-                    broadcast(peerId, `[${user}]: ${data.text}`);
+                    broadcast(peerId, { type: "message", text: data.text, username: user });
+                } else if (data.type === "error") {
+                    attachMessage(`Error: ${data.text}`);
+                } else if (data.type === "info") {
+                    attachMessage(data.text);
                 }
             });
 
@@ -115,7 +119,19 @@ join.addEventListener("click", () => {
             });
 
             conn.on("data", (data) => {
-                attachMessage(data);
+                if (typeof data === "object" && data !== null) {
+                    if (data.type === "message") {
+                        attachMessage(`[${data.username}]: ${data.text}`);
+                    } else if (data.type === "info") {
+                        attachMessage(data.text);
+                    } else if (data.type === "error") {
+                        attachMessage(`Error: ${data.text}`);
+                    } else {
+                        attachMessage(JSON.stringify(data));
+                    }
+                } else {
+                    attachMessage(data);
+                }
             });
 
             conn.on("error", (err) => {
@@ -156,18 +172,22 @@ terminal.addEventListener("keydown", (e) => {
 
         if (!text) return;
 
-        const msg = `TerminalCards/${savedRoom}/${savedUser}: ${terminal.textContent}`;
-        attachMessage(msg);
+        const msgObj = {
+            type: "message",
+            text: text,
+            username: savedUser
+        };
+        attachMessage(`[${savedUser}]: ${text}`);
 
-        const gamelogic = gamelogic(text);
-        if (gamelogic != null) {
-            attachMessage(gamelogic);
+        const gamelogicResult = gamelogic(text);
+        if (gamelogicResult != null) {
+            attachMessage(gamelogicResult);
         }
 
         if (hostOrUser === 'user' && conn && conn.open) {
-            conn.send({ type: "message", text: text });
+            conn.send(msgObj);
         } else if (hostOrUser === 'host') {
-            broadcast('host', msg); // host can send directly
+            broadcast('host', msgObj); // host can send directly
         }
         terminal.textContent = '';
     }
