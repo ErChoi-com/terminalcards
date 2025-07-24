@@ -22,15 +22,7 @@ const terminal = document.getElementById("terminal");
 // HOST: Create room
 make.addEventListener("click", () => {
     if (!inRoom) {
-        // Use public PeerJS cloud server configuration that works with GitHub Pages
-        peer = new Peer(roomCode.value, {
-            config: {
-                'iceServers': [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:global.stun.twilio.com:3478' }
-                ]
-            }
-        });
+        peer = new Peer(roomCode.value);
 
         peer.on("open", () => {
             attachMessage("Room created. Waiting for peers...");
@@ -41,48 +33,60 @@ make.addEventListener("click", () => {
             configureInput(); // host can send too
         });
 
-        peer.on("error", (err) => {
-            attachMessage("PeerJS error: " + err.type);
-        });
-
         peer.on("connection", (incomingConn) => {
             const peerId = incomingConn.peer;
             connections[peerId] = incomingConn;
 
             incomingConn.on("data", (data) => {
-                for (let id in usernames) {
-                    if (data.username === usernames[id]) {
-                        incomingConn.send({ type: "error", text: "User has identical username, connection terminated" });
-                        setTimeout(() => {
-                            delete connections[peerId];
-                            delete usernames[peerId];
-                            incomingConn.close();
-                        }, 100);
-                        attachMessage("User has identical username. Terminated")
-                        return;
-                    }
+                // Don't allow any messages before intro
+                if (data.type !== "intro" && !usernames[peerId]) {
+                    return;
                 }
                 if (data.type === "intro") {
+                    // Check for duplicate username when user tries to join
+                    for (let id in usernames) {
+                        if (data.username === usernames[id]) {
+                            incomingConn.send({
+                                type: "error",
+                                text: "User has identical username, connection terminated"
+                            });
+                            setTimeout(() => {
+                                delete connections[peerId];
+                                delete usernames[peerId];
+                                incomingConn.close();
+                            }, 100);
+                            attachMessage("User has identical username. Terminated");
+                            return;
+                        }
+                    }
                     // Save username from the peer
                     usernames[peerId] = data.username;
                     attachMessage(`${data.username} joined the room.`);
                     // Optionally notify others
-                    broadcast(peerId, { type: "info", text: `${data.username} has joined.`, username: data.username });
+                    broadcast(peerId, {
+                        type: "info",
+                        text: `${data.username} has joined.`,
+                        username: "System"
+                    });
                 } else if (data.type === "message") {
                     const user = usernames[peerId] || "Unknown";
-                    attachMessage(`[${user}]: ${data.text}`);
-                    broadcast(peerId, { type: "message", text: data.text, username: user });
-                } else if (data.type === "error") {
-                    attachMessage(`Error: ${data.text}`);
-                } else if (data.type === "info") {
                     attachMessage(data.text);
+                    broadcast(peerId, {
+                        type: "message",
+                        text: data.text,
+                        username: user
+                    });
                 }
             });
 
             incomingConn.on("close", () => {
                 const user = usernames[peerId] || peerId;
                 attachMessage(`${user} disconnected.`);
-                broadcast(peerId, `${user} has left.`);
+                broadcast(peerId, {
+                    type: "info",
+                    text: `${user} has left.`,
+                    username: "System"
+                });
                 delete connections[peerId];
                 delete usernames[peerId];
             });
@@ -95,15 +99,7 @@ make.addEventListener("click", () => {
 // USER: Join room
 join.addEventListener("click", () => {
     if (!inRoom) {
-        // Use public PeerJS cloud server configuration that works with GitHub Pages
-        peer = new Peer({
-            config: {
-                'iceServers': [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:global.stun.twilio.com:3478' }
-                ]
-            }
-        });
+        peer = new Peer();
 
         peer.on("open", () => {
             conn = peer.connect(roomCode.value); // connect to host
@@ -125,26 +121,16 @@ join.addEventListener("click", () => {
             conn.on("data", (data) => {
                 if (typeof data === "object" && data !== null) {
                     if (data.type === "message") {
-                        attachMessage(`[${data.username}]: ${data.text}`);
+                        attachMessage(data.text);
                     } else if (data.type === "info") {
                         attachMessage(data.text);
                     } else if (data.type === "error") {
                         attachMessage(`Error: ${data.text}`);
-                    } else {
-                        attachMessage(JSON.stringify(data));
                     }
                 } else {
-                    attachMessage(data);
+                    attachMessage(String(data));
                 }
             });
-
-            conn.on("error", (err) => {
-                attachMessage("Connection error: " + err.type);
-            });
-        });
-
-        peer.on("error", (err) => {
-            attachMessage("PeerJS error: " + err.type);
         });
     } else {
         attachMessage("You're already in a room.");
@@ -176,12 +162,13 @@ terminal.addEventListener("keydown", (e) => {
 
         if (!text) return;
 
+        const formattedText = `TerminalCards/${savedRoom}/${savedUser}: ${text}`;
         const msgObj = {
             type: "message",
-            text: text,
+            text: formattedText,
             username: savedUser
         };
-        attachMessage(`[${savedUser}]: ${text}`);
+        attachMessage(formattedText);
 
         const gamelogicResult = gamelogic(text);
         if (gamelogicResult != null) {
@@ -191,7 +178,7 @@ terminal.addEventListener("keydown", (e) => {
         if (hostOrUser === 'user' && conn && conn.open) {
             conn.send(msgObj);
         } else if (hostOrUser === 'host') {
-            broadcast('host', msgObj); // host can send directly
+            broadcast('host', msgObj);
         }
         terminal.textContent = '';
     }
