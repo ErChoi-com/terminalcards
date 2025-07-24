@@ -80,7 +80,11 @@ make.addEventListener("click", () => {
             incomingConn.on("close", () => {
                 const user = usernames[peerId] || peerId;
                 attachMessage(`${user} disconnected.`);
-                broadcast(peerId, `${user} has left.`);
+                broadcast(peerId, { 
+                    type: "info",
+                    text: `${user} has left.`,
+                    username: user
+                });
                 delete connections[peerId];
                 delete usernames[peerId];
             });
