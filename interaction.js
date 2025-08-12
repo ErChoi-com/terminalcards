@@ -53,6 +53,7 @@ make.addEventListener("click", () => {
                         return;
                     }
                 }
+                    // like idk man, the check for identical usernames breaks the system. 
                     */
                 if (data.type === "intro") {
                     // Save username from the peer
@@ -86,11 +87,11 @@ make.addEventListener("click", () => {
                 delete connections[peerId];
                 delete usernames[peerId];
             });
-        });
-    } else {
+        }
+    else {
         attachMessage("Please leave the current room first.");
-    }
-});
+    });
+}
 
 // USER: Join room
 join.addEventListener("click", () => {
@@ -148,6 +149,9 @@ disconnect.addEventListener("click", () => {
 
     attachMessage("Disconnected.");
     inRoom = false;
+    if (host) {
+        
+    }
 });
 
 // Terminal message input
