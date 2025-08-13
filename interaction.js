@@ -16,7 +16,7 @@ const make = document.getElementById("make");
 const join = document.getElementById("join");
 const disconnect = document.getElementById("disconnect");
 const body = document.getElementById("body");
-const terminal = document.getElementById("terminal");
+const terminalInput = document.getElementById("terminal-input");
 
 //just a rewrite so git commit takes this
 // HOST: Create room
@@ -37,24 +37,11 @@ make.addEventListener("click", () => {
             const peerId = incomingConn.peer;
             connections[peerId] = incomingConn;
 
-            /* incomingConn.on("data", (data) => {
-                for (let id in usernames) {
-                    if (data.username === usernames[id]) {
-                        incomingConn.send({
-                            type: "error",
-                            text: "User has identical username, connection terminated"
-                        });
-                        setTimeout(() => {
-                            delete connections[peerId];
-                            delete usernames[peerId];
-                            incomingConn.close();
-                        }, 100);
-                        attachMessage("User has identical username. Terminated")
-                        return;
-                    }
-                }
-                    // like idk man, the check for identical usernames breaks the system. 
-                    */
+            incomingConn.on("error", (err) => {
+                attachMessage(`Connection error with ${usernames[peerId] || peerId}: ${err.message}`);
+            });
+
+            incomingConn.on("data", (data) => {
                 if (data.type === "intro") {
                     // Save username from the peer
                     usernames[peerId] = data.username;
@@ -87,11 +74,11 @@ make.addEventListener("click", () => {
                 delete connections[peerId];
                 delete usernames[peerId];
             });
-        }
-    else {
+        });
+    } else {
         attachMessage("Please leave the current room first.");
-    });
-}
+    }
+});
 
 // USER: Join room
 join.addEventListener("click", () => {
@@ -115,9 +102,17 @@ join.addEventListener("click", () => {
                 savedRoom = roomCode.value;
             });
 
+            conn.on("error", (err) => {
+                attachMessage(`Connection error: ${err.message}`);
+            });
+
             conn.on("data", (data) => {
                 if (typeof data === "object" && data !== null) {
-                    if (data.type === "message") {
+                    if (data.type === "gameState") {
+                        attachMessage(data.text);
+                        if (data.currentCard) currentCard = data.currentCard;
+                        if (data.currentTurn) currentTurn = data.currentTurn;
+                    } else if (data.type === "message") {
                         attachMessage(data.text);
                     } else if (data.type === "info") {
                         attachMessage(data.text);
@@ -149,18 +144,19 @@ disconnect.addEventListener("click", () => {
 
     attachMessage("Disconnected.");
     inRoom = false;
-    if (host) {
-        
-    }
 });
 
+computer.addEventListener("click", () => {
+    attachMessage("Bot added...");
+})
+
 // Terminal message input
-terminal.addEventListener("keydown", (e) => {
+terminalInput.addEventListener("keydown", (e) => {
     if (e.key === 'Enter') {
         e.preventDefault();
-        const text = terminal.textContent.trim();
+        const text = terminalInput.textContent.trim();
 
-        if (!text) return;
+        if (!text || (savedUser == null)) return;
 
         const formattedText = `TerminalCards/${savedRoom}/${savedUser}: ${text}`;
         const msgObj = {
@@ -170,17 +166,31 @@ terminal.addEventListener("keydown", (e) => {
         };
         attachMessage(formattedText);
 
+        // Process game logic first
         const gamelogicResult = gamelogic(text);
         if (gamelogicResult != null) {
             attachMessage(gamelogicResult);
+            // Broadcast game state to all players
+            const stateMsg = {
+                type: "gameState",
+                text: gamelogicResult,
+                currentCard: currentCard,
+                currentTurn: currentTurn
+            };
+            if (hostOrUser === 'host') {
+                broadcast(roomCode.value, stateMsg);
+            } else if (conn && conn.open) {
+                conn.send(stateMsg);
+            }
         }
 
+        // Send message to other players
         if (hostOrUser === 'user' && conn && conn.open) {
             conn.send(msgObj);
         } else if (hostOrUser === 'host') {
-            broadcast('host', msgObj);
+            broadcast(roomCode.value, msgObj);
         }
-        terminal.textContent = '';
+        terminalInput.innerHTML = '<br>';
     }
 });
 
@@ -195,8 +205,8 @@ function broadcast(senderId, message) {
 
 // Enable typing
 function configureInput() {
-    terminal.contentEditable = true;
-    terminal.focus();
+    terminalInput.contentEditable = true;
+    terminalInput.focus();
 }
 
 // Display message in chat

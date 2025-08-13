@@ -1,5 +1,5 @@
 <!-- mainly useless -->
-
+import AnimatedContent from './reactanimations/AnimatedContent'
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -18,8 +18,11 @@
     <button type = "button" id = "make"> Make Room </button>
     <button type = "button" id = "join"> Join Room </button>
     <button type = "button" id = "disconnect"> Disconnect </button>
+    <button type = "button" id = "computer"> Add bot </button>
     <div id = "body"> </div>
-    <div id = "terminal" contenteditable = "true"> >&nbsp;</div>
+    <div id = "terminal">
+        <span class="prompt">&gt;&nbsp;</span><span id="terminal-input" contenteditable="true"></span>
+    </div>
 
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src = "interaction.js"> </script>

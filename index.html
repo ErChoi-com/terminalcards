@@ -1,13 +1,82 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Ernest Choi</title>
+
+    <!-- React and ReactDOM from CDN -->
+<script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+
+<!-- Babel for JSX support in the browser -->
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #000000;
+            font-family: 'Playfair Display', Georgia, serif;
+        }
+
+        .container {
+            text-align: center;
+            padding: 3rem;
+            border: 1px solid #ffffff;
+            border-radius: 4px;
+            background-color: #000000;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+            min-width: 300px;
+        }
+
+        .name {
+            color: #ffffff;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            letter-spacing: 3px;
+            font-weight: lighter;
+        }
+
+        .button-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            width: 100%;
+        }
+
+        .button {
+            display: block;
+            padding: 1rem;
+            text-decoration: none;
+            color: #ffffff;
+            border: 1px solid #ffffff;
+            border-radius: 2px;
+            transition: all 0.2s ease;
+            font-size: 1rem;
+        }
+
+        .button:hover {
+            background-color: #ffffff;
+            color: #000000;
+            transform: translateY(-1px);
+        }
+    </style>
 </head>
 <body>
-    <a href="./roomEnter.html">TerminalCards</a>
-    <a href="/terminalcards/roomEnter.html">TerminalCards</a>
-    <!-- I hope it dont break -->
+    <div class="container">
+        <h1 class="name">Ernest Choi</h1>
+        <div class="button-grid">
+            <a href="./roomEnter.html" class="button">TerminalCards</a>
+            <a href="#" class="button">Project 2</a>
+            <a href="#" class="button">Project 3</a>
+            <a href="#" class="button">Project 4</a>
+            <a href="https://github.com/ErChoi-com?tab=repositories" class="button" target="_blank">My GitHub</a>
+        </div>
+    </div>
 </body>
 </html>
