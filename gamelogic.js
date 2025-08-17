@@ -5,15 +5,18 @@ const playerCardMap = new Map();
 let hand = [];
 let pile = []; // basically the cards that aren't in the deck
 let deckCount = 0;
-let startingHandCount = 7;
+let startingCount = 7;
 let gameInitialized = false;
 let displayAll = false;
 let currentTurn = null; // stores the ID of the player whose turn it is
 let playerOrder = []; // array to store the order of players
 let turnIndex = 0; // keeps track of whose turn it is in the playerOrder
+let gameState = "";
+
+let othelloGrid = [];
 
 // pls work?
-function startGame(startingHandCount, gameMode) {
+function startGame(startingCount, gameMode) {
     if (gameInitialized) {
         attachMessage("Game has already been started.");
         return -1;
@@ -23,15 +26,15 @@ function startGame(startingHandCount, gameMode) {
         attachMessage("Can't start game, has to be host.");
     }
 
-    // Initialize turn system
-    playerOrder = Object.keys(usernames);
+    // Initialize turn system with host first
+    playerOrder = [roomCode.value, ...Object.keys(connections)];
     turnIndex = 0;
     currentTurn = playerOrder[turnIndex];
     
-    // Deal cards to players
-    for (let id in usernames) {
+    // Deal cards to all players including host
+    for (let id of playerOrder) {
         const tempHand = [];
-        for (let i = 0; i < startingHandCount; i++) {
+        for (let i = 0; i < startingCount; i++) {
             tempHand.push(drawCard());
         }
         playerCardMap.set(id, tempHand);
@@ -43,9 +46,13 @@ function startGame(startingHandCount, gameMode) {
     switch(gameMode) {
         case("poker"):
             pokerRules();
+            gameState
             break;
         case("demo"):
             simplestDemoRules();
+            break;
+        case("othello"):
+            othello();
             break;
     }
 }
@@ -59,49 +66,178 @@ function gamelogic(text) {
 function input(text) {
     // Get player ID based on whether they're host or user
     const playerId = hostOrUser === 'host' ? roomCode.value : peer.id;
+
+    if (gameState === "poker") {
+        pokerInput(text);
+    }
     
-    if (text[0] === "draw") {
-        if (!validateTurn(playerId, 'draw')) return;
-        const drawnCard = drawCard();
-        attachMessage(`You drew a ${drawnCard.rank} of ${drawnCard.suit}`);
-        nextTurn(); // Move to next player after drawing
-        return;
+    if (gameState = "othello") {
+        processOthello(text);
     }
 
-    if (text[0] === "play") {
-        if (!validateTurn(playerId, 'play')) return;
-        const result = playCard(text);
-        if (result === 0) {
-            nextTurn(); // Move to next player after playing
-        }
-        return;
-    }
+    return text;
+}
 
-    if (text[0] === "display") {
-        const displayHand = hand.map(card => `${card.rank} of ${card.suit}`).join(", "); 
-        //difficult line, essentially internal function runs and new array is printed through use of line, then joined line through use of ","                                                                                    
-        if (displayAll) {
-            playerCardMap.forEach((id, cards) => {
-                attachMessage(`${id}: ${cards.map(card => `${card.rank} of ${card.suit}`).join(", ")}`); // Display all players' hands
+function goThroughTurn() {
+    turnIndex = (turnIndex + 1) % playerOrder.length;
+    currentTurn = playerOrder[turnIndex];
+    
+    // Get the player's display name (host or username)
+    const playerName = currentTurn === roomCode.value ? savedUser : usernames[currentTurn];
+    const turnMessage = `It's ${playerName}'s turn.`;
+    
+    attachMessage(turnMessage);
+    
+    // Host specific: notify all players about turn change
+    if (hostOrUser === 'host') {
+        // Broadcast general message to everyone
+        broadcast(null, {
+            type: "info",
+            text: turnMessage,
+            username: "System"
+        });
+
+        // Send direct turn status to each player
+        for (let id in connections) {
+            const isCurrent = id === currentTurn;
+            connections[id].send({
+                type: "turn_status",
+                text: isCurrent ? "It's your turn!" : `Waiting for ${playerName} to play...`,
+                isYourTurn: isCurrent,
+                username: "System"
             });
         }
-        else {
-            attachMessage(`Your hand: ${displayHand}`);
+
+        // Handle host's own turn status
+        if (currentTurn === roomCode.value) {
+            attachMessage("It's your turn!");
         }
-        return;
-    }
-
-    if (text[0] === "start") {
-        startGame(text[1], text[2]);
-        return;
-    }
-
-    if (text[0] === "end") {
-        endGame();
-        return;
     }
 }
 
+function isPlayerTurn(playerId) {
+    const expectedId = hostOrUser === 'host' ? roomCode.value : peer.id;
+    return currentTurn === expectedId;
+}
+
+function validateTurn(playerId, action) {
+    if (!isPlayerTurn(playerId)) {
+        attachMessage("It's not your turn!");
+        return false;
+    }
+    return true;
+}
+
+// othello code now
+function othelloDisplay() {
+    attachMessage("Grid is: ")
+    for (let i = 0; i < othelloGrid.length; i++) {
+        let row = "";
+        let bottom = "";
+        for (let j = 0; j < othelloGrid[i].length; j++) {
+            row += othelloGrid[i][j] + " | ";
+            bottom += "-----";
+        }
+        console.log(row);
+        console.log(bottom);
+        attachMessage(row);
+    }
+}
+
+function othello(gridCount) {
+    let Xcounter;
+    let Ocounter;
+
+    if (Object.keys(connections).length > 1) {
+        attachMessage("This is a two player game");
+        return;
+    }
+
+    for (let i = 0; i < gridCount; i++) {
+        othelloGrid[i] = [];
+        for (let j = 0; j < gridCount; j++) {
+            othelloGrid[i][j] = " ";
+        }
+    }
+    // it's a two player game with a tile of grids
+    // works by just placing the pieces on the coordinates
+}
+
+function processOthello(text) {
+        if (input(text)[0] === "othelloDisplay") {
+            othelloDisplay();
+        }
+
+            if (parseInt(input(text.split)[1]) && parseInt(input(text.split)[4])) {
+                let x = parseInt(input(text.split)[1]);
+                let y = parseInt(input(text.split)[4]);
+                if (othelloGrid[x][y] === " ") {
+                    othelloGrid[x][y] = turn === "host" ? "X" : "O";
+                    turn = turn === "host" ? "user" : "host";
+                } else {
+                    attachMessage("Invalid move! Try again.");
+                }
+            }
+            turn = turn === "host" ? "user" : "host"
+            attachMessage(`It's ${turn}'s turn`);
+
+
+        if (Xcounter > Math.pow(gridCount, 2) || Ocounter > Math.pow(gridCount, 2) ) {
+            let winner = Xcounter > Ocounter ? "X" : "O";
+            attachMessage(`${winner} wins!`);
+        }
+}
+
+//Othello code ends here
+
+/* STOP HERE
+
+
+
+
+YES HERE
+
+
+
+STOP
+
+
+WHY AM I DOING THIS? BECAUSE IT'S FUCKING HARD TO KEEP TRACK OF STUFF
+
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡴⠞⠛⠉⢙⡛⣶⣤⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣴⠋⠀⠀⠀⢰⠁⠀⠀⠉⢻⣷⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢰⠇⠀⠀⠀⠀⠘⠀⠀⠀⠀⠀⠹⣷⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡟⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣰⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⠜⢹⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣤⣶⡶⠶⠮⠭⠵⢖⠒⠿⢤⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⡟⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⣠⡶⠿⠛⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠙⠲⣄⡀⠀⠀⠀⠀⠀⣰⠟⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⢀⣴⠟⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠚⠿⡷⣄⣀⣴⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⣠⠟⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠪⣻⣄⠀⠀⠀⣀⣀⠤⠴⠒⠚⢋⣭⣟⣯⣍⠉⠓⠒⠦⠤⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⣼⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⡝⣧⠔⠋⠁⠀⣀⠤⠔⣶⣿⡿⠿⠿⠿⠍⠉⠒⠢⢤⣀⠈⠑⠦⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⣼⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡦⠤⢤⣤⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⣞⣧⠤⠒⠉⠀⠀⠾⠛⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⢲⣴⣾⣷⢤⡀⠀⠀⠀⠀⠀⠀⠀
+⢰⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡜⠀⠀⠀⠀⠈⠙⠳⢦⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⣾⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⠟⢿⣿⣧⠙⢦⠀⠀⠀⠀⠀⠀
+⡜⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⠿⣦⣄⡀⠀⠐⢄⠀⠀⠀⢻⡇⠀⠀⠀⠀⡠⢊⣭⣬⣭⣶⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢿⡀⠀⠑⣄⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⢿⣦⡀⠀⠑⢄⣀⢿⠇⠀⠀⠀⡜⣼⠟⠁⠀⠀⠉⢿⡄⠀⠀⠀⠀⣠⠤⠤⠤⣀⡀⠈⠙⡄⠀⠈⢆⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⣝⢦⡀⠀⣠⡞⠢⢄⠀⡜⣼⠁⣠⣴⣶⢦⡀⠀⢻⠀⠀⢀⣎⡴⠟⠛⠛⠶⣝⢦⠀⠘⡄⠀⠈⢧⠀⠀
+⢢⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣧⣄⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢦⢻⡾⠋⠀⣀⣀⠁⠁⡇⢰⢿⣄⣿⣎⢷⠀⢸⡇⠀⢸⡝⢀⣤⣄⡀⠀⠙⢷⡀⠀⢱⠀⠀⠈⡇⠀
+⠸⡆⠀⠀⠀⠀⠀⠀⠀⠀⡸⠀⠀⠈⠙⣳⢦⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠟⣧⠀⢀⣀⣀⡉⠱⣿⣼⣆⢿⠻⣯⡞⠀⢸⡇⠀⢸⣷⣏⢙⣿⡻⡆⠀⠀⢳⠀⠀⠀⠀⠀⢸⡀
+⠀⢳⡀⠀⠀⠀⠀⠀⠉⠚⠁⠀⠀⠀⠀⠀⠉⠻⢿⣦⡀⠀⠀⠀⠀⠀⠀⠀⠀⣰⡏⠈⠁⠀⠀⠉⠢⠈⠛⢻⣿⠿⠛⠁⢀⣿⠇⠀⠈⣿⣿⢿⡟⣧⡷⠀⠀⢸⡄⠀⠀⠀⠀⠈⡇
+⠀⠈⢷⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⢿⢧⡀⠀⠀⠀⠢⠤⠔⡽⠁⠚⠉⠉⠉⢗⢷⣄⡠⣀⢻⣆⣀⣠⡿⠋⠀⠀⠀⠈⢿⡷⠿⠟⠁⠀⠀⣼⠀⠀⠀⠀⠀⠀⢱
+⠀⠀⠀⠻⣆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢣⠻⡄⠀⢀⣀⡤⠞⠁⠀⠀⠀⠀⠀⠘⢦⡈⠁⠀⠀⠸⡟⠉⠀⠀⠀⠀⠀⠀⠀⠙⢦⣀⣤⡶⠟⠉⠙⠒⠀⠀⠀⠀⢘
+⠀⠀⠀⠀⠈⠳⣦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠠⡀⠀⡇⣿⠛⠉⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⣿⣤⡀⠀⠈⠁⠀⠀⠀⠀⠀⠀⠀⠀⢠⠞⠍⠠⠤⠒⠂⢄⠀⠀⠀⠀⠀⢸
+⠀⠀⠀⠀⠀⠀⠈⠙⠲⣤⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢀⣽⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢹⣿⡉⠓⠦⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⣉⡿⠓⠲⠄⠀⠀⠀⠀⡆
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠛⠶⢤⣤⣄⣀⣠⣤⡤⠶⠛⣿⡀⠀⢢⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⣿⣿⣄⠀⠀⠉⠙⠒⠲⠤⠤⠤⣤⣤⡤⠖⠚⠁⠀⠀⠀⠀⠀⢰⠃
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢹⣷⠀⠀⠱⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢹⣿⣿⣿⣦⣄⡀⠀⠀⠀⢀⣼⣿⠏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡞⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢻⣧⡀⠀⠙⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢫⠙⢻⣿⣿⣿⣿⣿⣿⣿⣿⡏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡼⠁⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢳⡱⡀⠀⠀⠣⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠳⣔⢹⡉⢻⣿⣿⣿⣿⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡞⠁⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠹⣿⣆⠀⠀⠈⠢⡀⠀⠀⠀⠀⠀⠀⠀⠀⠙⠳⣥⣠⣹⣿⡿⠟⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⠞⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⣕⢄⠀⠀⠈⠂⠀⠀⠀⠀⠀⠀⠀⠈⠓⠢⠌⠉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡴⠃⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠻⢷⡦⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⠔⠋⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⠺⢕⣦⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⠴⠚⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠛⠻⠤⢄⣀⣀⣀⣀⣀⣀⣠⠤⠴⠒⠊⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+*/
+/*
 function drawCard() {
     if (pile.length === 52) {
         pile = [];
@@ -157,36 +293,53 @@ function pileSearch({suit, rank}) {
     return pile.find(card => card.rank === rank && card.suit === suit);
 }
 //the end of searching for it
+/*
+function pokerInput(text) {
+    if (text[0] === "draw") {
+        if (!validateTurn(playerId, 'draw')) return;
+        const drawnCard = drawCard();
+        attachMessage(`You drew a ${drawnCard.rank} of ${drawnCard.suit}`);
+        goThroughTurn(); // Move to next player after drawing
+        return;
+    }
 
-function nextTurn() {
-    turnIndex = (turnIndex + 1) % playerOrder.length;
-    currentTurn = playerOrder[turnIndex];
-    attachMessage(`It's ${usernames[currentTurn]}'s turn.`);
+    if (text[0] === "play") {
+        if (!validateTurn(playerId, 'play')) return;
+        const result = playCard(text);
+        if (result === 0) {
+            goThroughTurn(); // Move to next player after playing
+        }
+        return;
+    }
+
+    if (text[0] === "display") {
+        const displayHand = hand.map(card => `${card.rank} of ${card.suit}`).join(", "); 
+        //difficult line, essentially internal function runs and new array is printed through use of line, then joined line through use of ","                                                                                    
+        if (displayAll) {
+            playerCardMap.forEach((id, cards) => {
+                attachMessage(`${id}: ${cards.map(card => `${card.rank} of ${card.suit}`).join(", ")}`); // Display all players' hands
+            });
+        }
+        else {
+            attachMessage(`Your hand: ${displayHand}`);
+        }
+        return;
+    }
+
+    if (text[0] === "start") {
+        startGame(text[1], text[2]);
+        return;
+    }
     
-    // Broadcast turn change to all players
-    if (hostOrUser === 'host') {
-        broadcast('system', {
-            type: "info",
-            text: `It's ${usernames[currentTurn]}'s turn.`,
-            username: "System"
-        });
-    }
-}
 
-function isPlayerTurn(playerId) {
-    return currentTurn === playerId;
-}
-
-function validateTurn(playerId, action) {
-    if (!isPlayerTurn(playerId)) {
-        attachMessage("It's not your turn!");
-        return false;
+    if (text[0] === "end") {
+        endGame();
+        return;
     }
-    return true;
 }
 
 function pokerRules() {
-
+    gameState = "poker";
 }
 
 // Game state variables
@@ -195,6 +348,7 @@ let gameWinner = null;
 
 function simplestDemoRules() {
     gameInitialized = true;
+    gameState = "demo";
     
     // Draw and set the first card
     currentCard = drawCard();
@@ -278,3 +432,4 @@ function drawCard() {
     
     return card;
 }
+*/
