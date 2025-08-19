@@ -156,7 +156,20 @@ terminalInput.addEventListener("keydown", (e) => {
         e.preventDefault();
         const text = terminalInput.textContent.trim();
 
-        if (!text || (savedUser == null)) return;
+        if (text === "-keygen" && !inRoom) {
+            // const key = Math.random().toString(36).substring(2, Math.random()*15+12);
+            // no symbols for this implementation
+            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+[]{}|;:,.<>?";
+            let key = "";
+            for (let i = 0; i < Math.random()*12+14; i++) {
+                key+=chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            attachMessage(`Generated key: ${key}`);
+            terminalInput.innerHTML = '<br>';
+            return;
+        }
+
+        else if (!text || (savedUser == null)) return;
 
         const formattedText = `TerminalCards/${savedRoom}/${savedUser}: ${text}`;
         const msgObj = {

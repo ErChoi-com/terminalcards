@@ -1,8 +1,11 @@
-This is designed to be just a website for hosting card game. It works by connecting through peer to peer networking, and i will intergrate some heavy math combos into it
+## H2 Terminal Cards
 
+Terminal Cards is a **peer-to-peer** networking system that users interact with in the form of a terminal.
 
-peer.js just went down and I can't fix it. The whole thing just doesn't work ig
+It is written mainly using vanilla HTML, CSS and JavaScript, and makes use of peer.js. 
 
+Commands
+-keygen (displays a key to be used in )
 
 scrapped features list
 -react.js (reactbits.dev release)
