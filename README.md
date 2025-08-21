@@ -9,3 +9,6 @@ Commands
 
 scrapped features list
 -react.js (reactbits.dev release)
+
+
+notes: gamelogic is fucking the whole process. Rewrite if possible
