@@ -4,10 +4,12 @@ let savedUser;
 let savedRoom;
 let hostOrUser = '';
 let inRoom = false;
+let pyodide = null; // Pyodide instance
 
 // For hosts only: connections and usernames
 const connections = {}; // key: peer ID => conn
 const usernames = {};   // key: peer ID => username
+let directory = [];
 
 // UI references
 const username = document.getElementById("username");
@@ -56,7 +58,9 @@ make.addEventListener("click", () => {
                         text: `${data.username} has joined.`,
                         username: "System"
                     });
-                } else if (data.type === "message") {
+                } 
+                
+                else if (data.type === "message") {
                     console.log(`${data.text}`);
                     const user = usernames[peerId] || "Unknown";
                     attachMessage(data.text);
@@ -64,6 +68,20 @@ make.addEventListener("click", () => {
                         type: "message",
                         text: data.text,
                         username: user
+                    });
+                }
+
+                else if (data.type === "file") {
+                    directory.push({
+                        name: data.name,
+                        content: data.content
+                    });
+                }
+
+                else if (data.type === "fileList") {
+                    conn.send({
+                        type: "fileList",
+                        files: directory
                     });
                 }
                 console.log("message received");
@@ -126,6 +144,9 @@ join.addEventListener("click", () => {
                     } else if (data.type === "error") {
                         attachMessage(`Error: ${data.text}`);
                     }
+                    else if (data.type === "fileList") {
+                        directory = data.files;
+                    }
                 } else {
                     attachMessage(String(data));
                 }
@@ -155,30 +176,85 @@ disconnect.addEventListener("click", () => {
 });
 
 computer.addEventListener("click", () => {
-    attachMessage("Bot added...");
+    attachMessage("Bot added... NOT");
 })
 
 // Terminal message input
-terminalInput.addEventListener("keydown", (e) => {
-    if (e.key === 'Enter') {
+terminalInput.addEventListener("keydown", async (e) => {
+    if (e.key === 'Enter' && e.shiftKey) {
+        return;
+    }
+    else if (e.key === 'Enter') {
         e.preventDefault();
-        const text = terminalInput.textContent.trim();
+        let text = terminalInput.textContent.trim();
+        let textArray = text.split(" ");
         terminalInput.innerHTML = '<br>';
 
         if (text === "-keygen" && !inRoom) {
-            // const key = Math.random().toString(36).substring(2, Math.random()*15+12);
-            // no symbols for this implementation
             const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+[]{}|;:,.<>?";
             let key = "";
             for (let i = 0; i < Math.random()*12+14; i++) {
                 key+=chars.charAt(Math.floor(Math.random() * chars.length));
             }
             attachMessage(`Generated key: ${key}`);
-            terminalInput.innerHTML = '<br>';
             return;
         }
 
-        else if (!text || (savedUser == null)) return;
+        // Run Python code if input starts with 'python:'
+        if (textArray[0]==="python:") {
+            const pyCode = text.slice(7).trim();
+            const result = await python(pyCode);
+            attachMessage(result);
+            return;
+        }
+
+        if (textArray[0] === "touch" && textArray.length === 2) {
+            if (hostOrUser === "host") {
+                directory.push({
+                    name: textArray[1],
+                    content: ""
+                });
+            } 
+            else if (hostOrUser === "user") {
+                conn.send({
+                    type: "file",
+                    name: textArray[1],
+                    content: ""
+                });
+            }
+            attachMessage(`${textArray[1]} created`);
+            return;
+        }
+
+        if (textArray[0] === "ls") {
+            if (hostOrUser === "host") {
+                for (let file of directory) {
+                attachMessage(file.name);
+                }
+            }
+            else if (hostOrUser === "user") {
+                conn.send({
+                    type: "fileList"
+                });
+                for (let file of directory) {
+                    attachMessage(file.name);
+                }
+            }
+            return;
+        }
+
+        if (textArray[0] === "edit") {
+            const name = textArray[1];
+            const editedCode = text.slice(6 + name.length).trim();
+            for (let file of directory) {
+                if (file.name === name) {
+                    file.content = editedCode;
+                }
+            }
+        }
+    
+
+        if (!text || (savedUser == null)) return;
 
         const formattedText = `TerminalCards/${savedRoom}/${savedUser}: ${text}`;
         const msgObj = {
@@ -188,28 +264,12 @@ terminalInput.addEventListener("keydown", (e) => {
         };
         attachMessage(formattedText);
 
-        // Process game logic first
-        // const gamelogicResult = gamelogic(text);
-        /* if (gamelogicResult != null) {
-            attachMessage(gamelogicResult);
-            // Broadcast game state to all players
-            const stateMsg = {
-                type: "gameState",
-                text: gamelogicResult,
-                currentCard: currentCard,
-                currentTurn: currentTurn
-            }; 
-            if (hostOrUser === 'host') {
-                broadcast(savedRoom, stateMsg);
-            } else if (conn && conn.open) {
-                conn.send(stateMsg);
-            }
-        }*/
-
         // Send message to other players
         if (hostOrUser === 'user' && conn && conn.open) {
             conn.send(msgObj);
-        } else if (hostOrUser === 'host') {
+        } 
+        
+        else if (hostOrUser === 'host') {
             broadcast(savedRoom, msgObj);
         }
     }
@@ -235,4 +295,17 @@ function attachMessage(msg) {
     const actualText = document.createElement("div");
     actualText.textContent = msg;
     body.appendChild(actualText);
+}
+
+async function python(pyCode) {
+    if (!pyodide) {
+                attachMessage("Loading Python runtime...");
+                pyodide = await loadPyodide();
+            }
+            try {
+                const result = await pyodide.runPythonAsync(pyCode);
+                return(`Python output: ${result}`);
+            } catch (err) {
+                return(`Python error: ${err}`);
+            }
 }
