@@ -30,6 +30,10 @@ make.addEventListener("click", () => {
             hostOrUser = 'host';
             savedUser = username.value;
             savedRoom = roomCode.value;
+            
+            // Add host to usernames so they can participate in messaging
+            usernames[roomCode.value] = username.value;
+            
             configureInput(); // host can send too
         });
 
@@ -53,6 +57,7 @@ make.addEventListener("click", () => {
                         username: "System"
                     });
                 } else if (data.type === "message") {
+                    console.log(`${data.text}`);
                     const user = usernames[peerId] || "Unknown";
                     attachMessage(data.text);
                     broadcast(peerId, {
@@ -61,6 +66,7 @@ make.addEventListener("click", () => {
                         username: user
                     });
                 }
+                console.log("message received");
             });
 
             incomingConn.on("close", () => {
@@ -113,6 +119,7 @@ join.addEventListener("click", () => {
                         if (data.currentCard) currentCard = data.currentCard;
                         if (data.currentTurn) currentTurn = data.currentTurn;
                     } else if (data.type === "message") {
+                        console.log(`${data.text}`);
                         attachMessage(data.text);
                     } else if (data.type === "info") {
                         attachMessage(data.text);
@@ -122,6 +129,7 @@ join.addEventListener("click", () => {
                 } else {
                     attachMessage(String(data));
                 }
+                console.log("message received");
             });
         });
     } else {
@@ -155,6 +163,7 @@ terminalInput.addEventListener("keydown", (e) => {
     if (e.key === 'Enter') {
         e.preventDefault();
         const text = terminalInput.textContent.trim();
+        terminalInput.innerHTML = '<br>';
 
         if (text === "-keygen" && !inRoom) {
             // const key = Math.random().toString(36).substring(2, Math.random()*15+12);
@@ -180,8 +189,8 @@ terminalInput.addEventListener("keydown", (e) => {
         attachMessage(formattedText);
 
         // Process game logic first
-        const gamelogicResult = gamelogic(text);
-        if (gamelogicResult != null) {
+        // const gamelogicResult = gamelogic(text);
+        /* if (gamelogicResult != null) {
             attachMessage(gamelogicResult);
             // Broadcast game state to all players
             const stateMsg = {
@@ -189,21 +198,20 @@ terminalInput.addEventListener("keydown", (e) => {
                 text: gamelogicResult,
                 currentCard: currentCard,
                 currentTurn: currentTurn
-            };
+            }; 
             if (hostOrUser === 'host') {
-                broadcast(roomCode.value, stateMsg);
+                broadcast(savedRoom, stateMsg);
             } else if (conn && conn.open) {
                 conn.send(stateMsg);
             }
-        }
+        }*/
 
         // Send message to other players
         if (hostOrUser === 'user' && conn && conn.open) {
             conn.send(msgObj);
         } else if (hostOrUser === 'host') {
-            broadcast(roomCode.value, msgObj);
+            broadcast(savedRoom, msgObj);
         }
-        terminalInput.innerHTML = '<br>';
     }
 });
 
