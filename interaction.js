@@ -187,6 +187,7 @@ terminalInput.addEventListener("keydown", async (e) => {
     else if (e.key === 'Enter') {
         e.preventDefault();
         let text = terminalInput.textContent.trim();
+        let lineText = terminalInput.innerText.trim();
         let textArray = text.split(" ");
         terminalInput.innerHTML = '<br>';
 
@@ -194,15 +195,16 @@ terminalInput.addEventListener("keydown", async (e) => {
             const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+[]{}|;:,.<>?";
             let key = "";
             for (let i = 0; i < Math.random()*12+14; i++) {
-                key+=chars.charAt(Math.floor(Math.random() * chars.length));
+                key+=chars.charAt(Math.floor(Math.random() * chars.length - 26));
             }
             attachMessage(`Generated key: ${key}`);
             return;
         }
 
         // Run Python code if input starts with 'python:'
-        if (textArray[0]==="python:") {
-            const pyCode = text.slice(7).trim();
+        if (text.startsWith("python: ")) {
+            const pyCode = lineText.slice(8).trim();
+            attachMessage(pyCode);
             const result = await python(pyCode);
             attachMessage(result);
             return;
@@ -303,6 +305,8 @@ async function python(pyCode) {
                 pyodide = await loadPyodide();
             }
             try {
+                console.log(`attached message: ${pyCode}`);
+                pyCode = pyCode.replace(/\u00A0/g, " ");
                 const result = await pyodide.runPythonAsync(pyCode);
                 return(`Python output: ${result}`);
             } catch (err) {
