@@ -7,7 +7,7 @@ import { gaussianRender } from '../textures/noise.js';
 // Now you can use perlinRender(xrange, yrange, o)
 
 let mainScene;
-let existingShape;
+let existingShape = false;
 let arrayTextures = [];
 class baseWorld {
     constructor() {
