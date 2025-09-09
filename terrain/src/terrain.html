@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+  <!-- start of all the various imports -->
+    <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.152.2/examples/jsm/"
+      }
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.1/full/pyodide.js"></script>
+    <script type="module" src="terrain.js"></script>
+  <!-- end of all the imports -->
+
+  <h1> Terrain Generation </h1>
+  <select name ="textures" id = "textures">
+    <option value = "noise"> Noise </option>
+    <option value = "perlin"> Perlin </option>
+    <option value = "waves"> Waves </option>
+  </select>
+  <span>
+    <div contenteditable = "true" id = "parameterOne" data-placeholder = "Parameter 1"></div>
+    <div contenteditable = "true" id  = "parameterTwo" data-placeholder = "Parameter 2"></div>
+    <div contenteditable = "true" id = "parameterThree" data-placeholder = "Parameter 3"></div>
+  </span>
+  <button id = "generate"> Generate </button>
+  <button id="clear">Clear</button>
+
+
+  <span>
+    <p id = "fps">FPS: </p> <p id = "counter"></p>
+  </span>
+
+</body>
+</html>
