@@ -7,6 +7,7 @@ import { gaussianRender } from '../textures/noise.js';
 // Now you can use perlinRender(xrange, yrange, o)
 
 let mainScene;
+let existingShape;
 let arrayTextures = [];
 class baseWorld {
     constructor() {
@@ -168,11 +169,7 @@ class baseWorld {
         })
         );
 
-        //Animate the panels
-        //this.panelCreate('perlin', 1, 200, 5);
-        //this.panelCreate('waves', 1, 160, 0.25);
-        this.panelCreate('circle', 1, 40, [80, 80]);
-        //this.panelCreate('gaussian', 1, 90, 1)
+        
 
         // Enable shadows
         box.castShadow = true;
@@ -206,6 +203,8 @@ class baseWorld {
     }
 }
 
+// below makes the button function lol
+
 document.getElementById('clear').onclick = () => {
     for (let i = mainScene.children.length - 1; i >= 0; i--) {
         const obj = mainScene.children[i];
@@ -217,12 +216,38 @@ document.getElementById('clear').onclick = () => {
             mainScene.remove(obj);
         }
     }
+    existingShape = false;
     console.log("Scene cleared");
 };
 
-document.getElementById('textures').onchange = async (event) => {
-    
-}
+document.getElementById('generate').onclick = async (event) => {
+    let texture = document.getElementById('textures').value;
+    let parameter1 = document.getElementById('parameterOne').textContent.trim();
+    let parameter2 = document.getElementById('parameterTwo').textContent.trim();
+    let parameter3 = document.getElementById('parameterThree').textContent.trim();
+
+    // Convert to numbers or arrays as needed
+    let size = Number(parameter1);
+    let tileCount = Number(parameter2);
+    let spare;
+    if (texture === 'circle') {
+        // Expecting something like "80,80" or "80 80"
+        spare = parameter3.split(/[\s,]+/).map(Number);
+    } else if (texture === 'waves' || texture === 'perlin' || texture === 'gaussian') {
+        spare = Number(parameter3);
+    }
+
+    if (!existingShape) {
+        app.panelCreate(texture, size, tileCount, spare);
+        existingShape = true;
+    }
+
+    //Animate the panels
+        //this.panelCreate('perlin', 1, 200, 5);
+        //this.panelCreate('waves', 1, 160, 0.25);
+        //this.panelCreate('circle', 1, 40, [80, 80]);
+        //this.panelCreate('gaussian', 1, 90, 1)
+};
 
 // Create an instance of the baseWorld class
 let app = new baseWorld();
