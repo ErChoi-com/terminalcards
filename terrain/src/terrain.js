@@ -4,8 +4,6 @@ import { perlinRender } from '../textures/perlin.js';
 import { centralRender, circleRender, wavesRender } from '../textures/waves.js';
 import { gaussianRender } from '../textures/noise.js';
 
-// Now you can use perlinRender(xrange, yrange, o)
-
 let mainScene;
 let existingShape = false;
 let arrayTextures = [];
@@ -73,6 +71,7 @@ class baseWorld {
         for (let x = 0; x < tileCount; x++) {
             for (let y = 0; y < tileCount; y++) {
                 const levelcenter = Math.round((map[y][x].r - 120) / 5);
+                // height's good enough
                 if (filledBox === true) {
                     try {
                         const tile = new THREE.Mesh(geometry, tileMaterial);

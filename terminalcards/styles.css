@@ -1,0 +1,85 @@
+/* styles.css */
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "Times New Roman", Times, serif;
+  background-color: #121212;
+  color: #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+}
+
+a {
+  color: #03dac6;
+  text-decoration: none;
+  font-weight: bold;
+  margin-bottom: 1.5rem;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+p {
+  margin: 0.5rem 0;
+  font-size: 1rem;
+}
+
+input[type="text"] {
+  width: 250px;
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+  background-color: #1f1f1f;
+  border: 1px solid #333;
+  color: #fff;
+  border-radius: 5px;
+}
+
+button {
+  margin: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: #03dac6;
+  color: #000;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.2s;
+}
+
+button:hover {
+  background-color: #00c4a7;
+}
+
+#body {
+  margin: 0;
+  padding: 0;
+  font-family: "Times New Roman", Times, serif;
+  width: 100%;
+  max-width: 800px;
+}
+
+#terminal {
+  margin: 0;
+  padding: 0;
+  font-family: "Times New Roman", Times, serif;
+  width: 100%;
+  max-width: 800px;
+}
+
+.prompt {
+  color: #00ff00;
+  user-select: none;
+  pointer-events: none;
+}
+
+#terminal-input {
+  flex-grow: 1;
+  outline: none;
+  margin-left: 4px;
+  color: #00ff00;
+  min-height: 1em;
+}
