@@ -50,8 +50,8 @@ class baseWorld {
                 map = circleRender(tileCount, tileCount, f, po);
                 break;
             case 'gaussian':
-                mean = spare;
-                stdev = 2;
+                stdev = spare;
+                mean = 2;
                 map = gaussianRender(tileCount, tileCount, mean, stdev);
                 break;
         }
