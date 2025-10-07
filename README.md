@@ -10,5 +10,11 @@ Commands
 scrapped features list
 -react.js (reactbits.dev release)
 
+## H2 Terrain Generator
 
-notes: gamelogic is fucking the whole process. Rewrite if possible
+Generate Terrain. Below text boxes are for parameters. For best experience, use following demo as example
+1
+140
+3
+
+notes: gamelogic is messing the whole process. Rewrite if possible

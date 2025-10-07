@@ -163,8 +163,64 @@
         <p>&copy; 2025 Ernest Choi.</p>
     </footer>
 
+    <!-- start snakegame script -->
     <script>
-        document.title("")
+        let gridLength = 3;
+        let grid = [];
+        let delay = 1000;
+
+        function initGrid() {
+            for (let i = 0; i < 4; i++) {
+                grid[i] = [];
+                for (let j = 0; j < gridLength * 2; j++) {
+                    grid[i][j] = "";
+                }
+            }
+        }
+         
+        function frameGen() {
+            let unicodesequence = "";
+            for (let k = 0; k < gridLength; k++) {
+                let totalnum = 0;
+
+                for (let n = 0; n < 2; n++) {
+                    for (let l = 0; l < 3; l++) {
+                        if (grid[l][n + k] == "*") {
+                            totalnum += Math.pow(2, l + n);
+                        }
+                    }
+                }
+
+                if (grid[3][k] == "*") {
+                    totalnum += Math.pow(2, l + 4);
+                } 
+
+                if (grid[3][k + 1] == "*") {
+                    totalnum += Math.pow(2, l + 4 + 1);
+                }
+                
+                const hexChar = "0123456789ABCDEF";
+                const tenth = Math.floor(totalnum / 16);
+                const oneth = totalnum % 16;
+                const unicodeChar = "\u{28" + hexChar.charAt(tenth) + hexChar.charAt(oneth) + "}";
+                unicodesequence += unicodeChar;
+            }
+            document.title = unicodesequence;
+        }
+
+        initGrid();
+        setInterval(() => {
+            while (true) {
+                const row = Math.round(Math.random() * 3);
+                const column = Math.round(Math.random() * gridLength * 2 - 1)
+                if (grid[row][column] != '*') {
+                    grid[row][column] = '*';
+                    break;
+                } 
+            }
+            frameGen();
+        }, delay)
     </script>
+    <!-- end snakegame script -->
 </body>
 </html>
